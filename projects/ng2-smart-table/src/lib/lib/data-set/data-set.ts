@@ -40,7 +40,12 @@ export class DataSet {
   }
 
   findRowByData(data: any): Row {
-    return this.rows.find((row: Row) => row.getData() === data);
+    return this.rows.find((row: Row) => {
+      if (data.id !== undefined) {
+        return data.id === row.getData().id;
+      }
+      return row.getData() === data;
+    });
   }
 
   deselectAll() {
