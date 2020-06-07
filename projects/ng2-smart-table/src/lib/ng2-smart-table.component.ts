@@ -1,20 +1,21 @@
-import { Component, Input, Output, SimpleChange, EventEmitter, OnChanges } from '@angular/core';
+import { Component, Input, Output, SimpleChange, EventEmitter, OnChanges, OnInit } from '@angular/core';
 
 import { Grid } from './lib/grid';
 import { DataSource } from './lib/data-source/data-source';
 import { Row } from './lib/data-set/row';
 import { deepExtend } from './lib/helpers';
 import { LocalDataSource } from './lib/data-source/local/local.data-source';
+import { Subject } from 'rxjs';
 
 @Component({
   selector: 'ng2-smart-table',
   styleUrls: ['./ng2-smart-table.component.scss'],
   templateUrl: './ng2-smart-table.component.html',
 })
-export class Ng2SmartTableComponent implements OnChanges {
+export class Ng2SmartTableComponent implements OnChanges, OnInit {
 
   @Input() source: any;
-  @Input() settings: Object = {};
+  @Input() settingssub: Subject<any>;
 
   @Output() rowSelect = new EventEmitter<any>();
   @Output() userRowSelect = new EventEmitter<any>();
@@ -27,6 +28,7 @@ export class Ng2SmartTableComponent implements OnChanges {
   @Output() createConfirm = new EventEmitter<any>();
   @Output() rowHover: EventEmitter<any> = new EventEmitter<any>();
 
+  settings: Object = {};
   tableClass: string;
   tableId: string;
   perPageSelect: any;
@@ -86,11 +88,22 @@ export class Ng2SmartTableComponent implements OnChanges {
 
   isAllSelected: boolean = false;
 
-  ngOnChanges(changes: { [propertyName: string]: SimpleChange }) {
-    if (this.grid) {
-      if (changes['settings']) {
-        this.grid.setSettings(this.prepareSettings());
+  ngOnInit() {
+    this.settingssub.subscribe(
+      (settings) => {
+        this.settings = settings;
+        if (this.grid) {
+          this.grid.setSettings(this.prepareSettings());
+        } else {
+          this.initGrid();
+        }
+        this.updateGrid();
       }
+    );
+  }
+
+  ngOnChanges(changes: { [propertyName: string]: SimpleChange; }) {
+    if (this.grid) {
       if (changes['source']) {
         this.source = this.prepareSource();
         this.grid.setSource(this.source);
@@ -98,6 +111,10 @@ export class Ng2SmartTableComponent implements OnChanges {
     } else {
       this.initGrid();
     }
+    this.updateGrid();
+  }
+
+  private updateGrid() {
     this.tableId = this.grid.getSetting('attr.id');
     this.tableClass = this.grid.getSetting('attr.class');
     this.isHideHeader = this.grid.getSetting('hideHeader');
